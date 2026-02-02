@@ -6,6 +6,49 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <script>
+       AFRAME.registerComponent('touch-rotate', {
+  init: function () {
+    this.isDragging = false;
+    this.previousX = 0;
+
+    // Help the component find the right events for both Mouse and Phone
+    const startAction = (e) => {
+      this.isDragging = true;
+      this.previousX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+    };
+
+    const endAction = () => {
+      this.isDragging = false;
+    };
+
+    const moveAction = (e) => {
+      if (!this.isDragging) return;
+
+      const currentX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+      const deltaX = currentX - this.previousX;
+
+      let rotation = this.el.getAttribute('rotation');
+
+      // Since your model is tilted 90 degrees (rotation="90 0 0"):
+      // Rotating around the 'Z' axis usually spins it like a top
+      // If it's spinning the wrong way, change 'z' to 'y' below
+      rotation.z -= deltaX * 0.5;
+
+      this.el.setAttribute('rotation', rotation);
+      this.previousX = currentX;
+    };
+
+    // Add listeners to the element (for clicking the model directly)
+    this.el.addEventListener('mousedown', startAction);
+    this.el.addEventListener('touchstart', startAction);
+
+    // Add listeners to the window (to keep rotating even if finger leaves the model)
+    window.addEventListener('mousemove', moveAction);
+    window.addEventListener('touchmove', moveAction);
+    window.addEventListener('mouseup', endAction);
+    window.addEventListener('touchend', endAction);
+  }
+});
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector('a-scene');
         const infoPanel = document.querySelector('#info-panel');
@@ -55,7 +98,14 @@
           animation="property: material.opacity; from: 0.2; to: 0.7; dur: 1000; dir: alternate; loop: true">
         </a-plane>
 
-        <a-gltf-model src="#avatarModel" position="1 1 0.1" scale="0.8 0.8 0.8" rotation="90 0 0"></a-gltf-model>></a-gltf-model>
+        <a-gltf-model
+  src="#avatarModel"
+  class="clickable"
+  touch-rotate
+  position="1 0.8 0.1"
+  scale="0.8 0.8 0.8"
+  rotation="90 0 0">
+</a-gltf-model>
 
         <a-image id="info-panel" src="#oyutanMedeelel"
           width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
