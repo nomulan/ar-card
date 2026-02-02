@@ -10,18 +10,24 @@
   init: function () {
     this.isDragging = false;
     this.previousX = 0;
+    this.originalScale = {x: 0.8, y: 0.8, z: 0.8};
 
-    // Help the component find the right events for both Mouse and Phone
-    const startAction = (e) => {
+    // 1. Mousedown/Touchstart: Trigger 'Active' HUD state
+    this.el.addEventListener('mousedown', (e) => {
       this.isDragging = true;
       this.previousX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    };
 
-    const endAction = () => {
-      this.isDragging = false;
-    };
+      // HUD Feedback: Slight scale up when touched
+      this.el.setAttribute('animation__scale', {
+        property: 'scale',
+        to: '0.9 0.9 0.9',
+        dur: 200,
+        easing: 'easeOutCubic'
+      });
+    });
 
-    const moveAction = (e) => {
+    // 2. Window Move: Spin the character on its axis
+    window.addEventListener('mousemove', (e) => {
       if (!this.isDragging) return;
 
       const currentX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
@@ -29,24 +35,26 @@
 
       let rotation = this.el.getAttribute('rotation');
 
-      // Since your model is tilted 90 degrees (rotation="90 0 0"):
-      // Rotating around the 'Z' axis usually spins it like a top
-      // If it's spinning the wrong way, change 'z' to 'y' below
+      // Rotate only the Z-axis (spinning top feel)
       rotation.z -= deltaX * 0.5;
-
       this.el.setAttribute('rotation', rotation);
+
       this.previousX = currentX;
-    };
+    });
 
-    // Add listeners to the element (for clicking the model directly)
-    this.el.addEventListener('mousedown', startAction);
-    this.el.addEventListener('touchstart', startAction);
+    // 3. Mouseup: Return to normal state
+    window.addEventListener('mouseup', () => {
+      if (!this.isDragging) return;
+      this.isDragging = false;
 
-    // Add listeners to the window (to keep rotating even if finger leaves the model)
-    window.addEventListener('mousemove', moveAction);
-    window.addEventListener('touchmove', moveAction);
-    window.addEventListener('mouseup', endAction);
-    window.addEventListener('touchend', endAction);
+      // HUD Feedback: Smoothly return to original scale
+      this.el.setAttribute('animation__scale', {
+        property: 'scale',
+        to: '0.8 0.8 0.8',
+        dur: 200,
+        easing: 'easeOutCubic'
+      });
+    });
   }
 });
       document.addEventListener("DOMContentLoaded", () => {
@@ -98,13 +106,15 @@
           animation="property: material.opacity; from: 0.2; to: 0.7; dur: 1000; dir: alternate; loop: true">
         </a-plane>
 
-        <a-gltf-model
+       <a-gltf-model
   src="#avatarModel"
   class="clickable"
   touch-rotate
   position="1 0.8 0.1"
   scale="0.8 0.8 0.8"
-  rotation="90 0 0">
+  rotation="90 0 0"
+  geometry="primitive: box; width: 0.8; height: 1.6; depth: 0.8"
+  material="opacity: 0; transparent: true">
 </a-gltf-model>
 
         <a-image id="info-panel" src="#oyutanMedeelel"
