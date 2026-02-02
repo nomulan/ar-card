@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const sceneEl = document.querySelector('a-scene');
+        const infoPanel = document.querySelector('#info-panel');
+        const icons = document.querySelectorAll('.icon-animate');
+        const scanOverlay = document.querySelector('#scanning-overlay');
+
+        sceneEl.addEventListener("targetFound", event => {
+          scanOverlay.setAttribute("visible", false);
+          infoPanel.emit('card-found');
+          icons.forEach(icon => icon.emit('card-found'));
+        });
+
+        sceneEl.addEventListener("targetLost", event => {
+          scanOverlay.setAttribute("visible", true);
+          infoPanel.setAttribute("position", "0 0 0");
+          infoPanel.setAttribute("material", "opacity", "0");
+          icons.forEach(icon => {
+            icon.setAttribute("rotation", "0 0 0");
+            icon.setAttribute("material", "opacity", "0");
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <a-asset-item id="avatarModel" src="./avatar-HcHzJheZ0UuanqKdzMts.glb"></a-asset-item>
+        <img id="instaIcon" src="./instagram.png">
+        <img id="linkedinIcon" src="./LinkedIn_logo_initials.png">
+        <img id="oyutanMedeelel" src="./oyutanMedeelel.png">
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+
+        <a-plane id="scanning-overlay"
+          position="0 0 0.01"
+          width="1" height="0.6"
+          color="#FFFFFF"
+          material="transparent: true; opacity: 0.5"
+          animation="property: material.opacity; from: 0.2; to: 0.7; dur: 1000; dir: alternate; loop: true">
+        </a-plane>
+
+        <a-gltf-model src="#avatarModel" position="0.6 0 0.1" scale="0.8 0.8 0.8"></a-gltf-model>
+
+        <a-image id="info-panel" src="#oyutanMedeelel"
+          width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
+          animation__slide="property: position; from: 0 0 0; to: 1.2 0 0; dur: 1000; delay: 300; easing: easeOutExpo; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 500; delay: 300; startEvents: card-found">
+        </a-image>
+
+        <a-image src="#instaIcon" class="clickable icon-animate"
+          position="-0.2 -1 0.1" width="0.25" height="0.25" material="opacity: 0"
+          animation__flip="property: rotation; from: 90 0 0; to: 0 0 0; dur: 800; delay: 800; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 800; startEvents: card-found"
+          onclick="window.open('https://instagram.com/yourprofile', '_blank')">
+        </a-image>
+
+        <a-image src="#linkedinIcon" class="clickable icon-animate"
+          position="0.2 -1 0.1" width="0.25" height="0.25" material="opacity: 0"
+          animation__flip="property: rotation; from: 90 0 0; to: 0 0 0; dur: 800; delay: 1000; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1000; startEvents: card-found"
+          onclick="window.open('https://linkedin.com/in/yourprofile', '_blank')">
+        </a-image>
+
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
