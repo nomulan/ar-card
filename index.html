@@ -5,83 +5,98 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
+    <style>
+      #ui-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+      }
+      .rotate-btn {
+        width: 70px;
+        height: 70px;
+        background: #FF9500;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
+
     <script>
-       AFRAME.registerComponent('touch-rotate', {
-  init: function () {
-    this.isDragging = false;
-    this.previousX = 0;
-    this.originalScale = {x: 0.8, y: 0.8, z: 0.8};
+      let rotateInterval;
+      const rotationSpeed = 1.5;
 
-    // 1. Mousedown/Touchstart: Trigger 'Active' HUD state
-    this.el.addEventListener('mousedown', (e) => {
-      this.isDragging = true;
-      this.previousX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+      function toggleVideo() {
+        const video = document.querySelector('#myVideo');
+        video.paused ? video.play() : video.pause();
+      }
 
-      // HUD Feedback: Slight scale up when touched
-      this.el.setAttribute('animation__scale', {
-        property: 'scale',
-        to: '0.9 0.9 0.9',
-        dur: 200,
-        easing: 'easeOutCubic'
-      });
-    });
+      function startAutoRotate() {
+        if (rotateInterval) return;
+        const model = document.querySelector('#avatar');
+        const animate = () => {
+          let rot = model.getAttribute('rotation');
+          rot.z += rotationSpeed;
+          model.setAttribute('rotation', rot);
+          rotateInterval = requestAnimationFrame(animate);
+        };
+        rotateInterval = requestAnimationFrame(animate);
+      }
 
-    // 2. Window Move: Spin the character on its axis
-    window.addEventListener('mousemove', (e) => {
-      if (!this.isDragging) return;
+      function stopAutoRotate() {
+        cancelAnimationFrame(rotateInterval);
+        rotateInterval = null;
+      }
 
-      const currentX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-      const deltaX = currentX - this.previousX;
-
-      let rotation = this.el.getAttribute('rotation');
-
-      // Rotate only the Z-axis (spinning top feel)
-      rotation.z -= deltaX * 0.5;
-      this.el.setAttribute('rotation', rotation);
-
-      this.previousX = currentX;
-    });
-
-    // 3. Mouseup: Return to normal state
-    window.addEventListener('mouseup', () => {
-      if (!this.isDragging) return;
-      this.isDragging = false;
-
-      // HUD Feedback: Smoothly return to original scale
-      this.el.setAttribute('animation__scale', {
-        property: 'scale',
-        to: '0.8 0.8 0.8',
-        dur: 200,
-        easing: 'easeOutCubic'
-      });
-    });
-  }
-});
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector('a-scene');
+        const avatar = document.querySelector('#avatar');
         const infoPanel = document.querySelector('#info-panel');
+        const arVideo = document.querySelector('#ar-video-entity');
         const icons = document.querySelectorAll('.icon-animate');
-        const scanOverlay = document.querySelector('#scanning-overlay');
+        const videoAsset = document.querySelector('#myVideo');
 
-        sceneEl.addEventListener("targetFound", event => {
-          scanOverlay.setAttribute("visible", false);
+        sceneEl.addEventListener("targetFound", () => {
+          avatar.emit('card-found');
           infoPanel.emit('card-found');
+          arVideo.emit('card-found');
           icons.forEach(icon => icon.emit('card-found'));
+          // Video auto-play attempt
+          videoAsset.play().catch(() => console.log("Interaction required"));
         });
 
-        sceneEl.addEventListener("targetLost", event => {
-          scanOverlay.setAttribute("visible", true);
-          infoPanel.setAttribute("position", "0 0 0");
+        sceneEl.addEventListener("targetLost", () => {
+          videoAsset.pause();
+          avatar.setAttribute("scale", "0 0 0");
+          avatar.setAttribute("position", "0 0 0");
           infoPanel.setAttribute("material", "opacity", "0");
+          arVideo.setAttribute("material", "opacity", "0");
           icons.forEach(icon => {
-            icon.setAttribute("rotation", "0 0 0");
             icon.setAttribute("material", "opacity", "0");
+            icon.setAttribute("position", "0 0 0");
           });
         });
       });
     </script>
   </head>
+
   <body>
+    <div id="ui-container">
+      <button class="rotate-btn"
+              onmousedown="startAutoRotate()"
+              onmouseup="stopAutoRotate()"
+              onmouseleave="stopAutoRotate()"
+              ontouchstart="startAutoRotate()"
+              ontouchend="stopAutoRotate()">
+        ROTATE
+      </button>
+    </div>
+
     <a-scene
       mindar-image="imageTargetSrc: ./targets.mind;"
       vr-mode-ui="enabled: false"
@@ -91,51 +106,51 @@
         <a-asset-item id="avatarModel" src="./avatar-HcHzJheZ0UuanqKdzMts.glb"></a-asset-item>
         <img id="instaIcon" src="./instagram.png">
         <img id="linkedinIcon" src="./LinkedIn_logo_initials.png">
+        <img id="FacebookIcon" src="./Facebook_logo_(square).png">
         <img id="oyutanMedeelel" src="./oyutanMedeelel.png">
+        <video id="myVideo" src="./MONGOLIAN UNIVERSITY OF SCIENCE AND TECHNOLOGY 2019.mp4" preload="auto" loop="true" crossorigin="anonymous" webkit-playsinline playsinline></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
 
-        <a-plane id="scanning-overlay"
-          position="0 0 0.01"
-          width="1" height="0.6"
-          color="#FFFFFF"
-          material="transparent: true; opacity: 0.5"
-          animation="property: material.opacity; from: 0.2; to: 0.7; dur: 1000; dir: alternate; loop: true">
-        </a-plane>
-
-       <a-gltf-model
-  src="#avatarModel"
-  class="clickable"
-  touch-rotate
-  position="1 0.8 0.1"
-  scale="0.8 0.8 0.8"
-  rotation="90 0 0"
-  geometry="primitive: box; width: 0.8; height: 1.6; depth: 0.8"
-  material="opacity: 0; transparent: true">
-</a-gltf-model>
-
-        <a-image id="info-panel" src="#oyutanMedeelel"
-          width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 1.2 0 0; dur: 1000; delay: 300; easing: easeOutExpo; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 500; delay: 300; startEvents: card-found">
+        <a-image id="info-panel" src="#oyutanMedeelel" width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
+          animation__slide="property: position; from: 0 0 0; to: 1.2 0 0; dur: 800; delay: 300; easing: easeOutExpo; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
         </a-image>
 
-        <a-image src="#instaIcon" class="clickable icon-animate"
-          position="-0.2 -1 0.1" width="0.25" height="0.25" material="opacity: 0"
-          animation__flip="property: rotation; from: 90 0 0; to: 0 0 0; dur: 800; delay: 800; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 800; startEvents: card-found"
+        <a-image src="#instaIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
+          animation__slide="property: position; from: 0 0 0; to: -0.4 -1 0.1; dur: 600; delay: 900; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 900; startEvents: card-found"
           onclick="window.open('https://instagram.com/yourprofile', '_blank')">
         </a-image>
 
-        <a-image src="#linkedinIcon" class="clickable icon-animate"
-          position="0.2 -1 0.1" width="0.25" height="0.25" material="opacity: 0"
-          animation__flip="property: rotation; from: 90 0 0; to: 0 0 0; dur: 800; delay: 1000; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1000; startEvents: card-found"
+        <a-image src="#linkedinIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
+          animation__slide="property: position; from: 0 0 0; to: 0 -1 0.1; dur: 600; delay: 1100; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1100; startEvents: card-found"
           onclick="window.open('https://linkedin.com/in/yourprofile', '_blank')">
         </a-image>
+
+        <a-image src="#FacebookIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
+          animation__slide="property: position; from: 0 0 0; to: 0.4 -1 0.1; dur: 600; delay: 1300; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1300; startEvents: card-found"
+          onclick="window.open('https://facebook.com/yourprofile', '_blank')">
+        </a-image>
+
+        <a-video id="ar-video-entity" src="#myVideo" width="1" height="1" position="0 0 0" rotation="90 0 0" material="opacity: 0" class="clickable" onclick="toggleVideo()"
+          animation__slide="property: position; from: 0 0 0; to: 0 1 0.1; dur: 800; delay: 1900; easing: easeOutExpo; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1900; startEvents: card-found">
+        </a-video>
+
+        <a-gltf-model id="avatar"
+              src="#avatarModel"
+              position="0 0 0"
+              scale="0 0 0"
+              rotation="90 0 0"
+              animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 2500; easing: easeOutBack; startEvents: card-found"
+              animation__slide="property: position; from: 0 0 0; to: 1 1 0.1; dur: 1000; delay: 2500; easing: easeOutExpo; startEvents: card-found">
+        </a-gltf-model>
 
       </a-entity>
     </a-scene>
