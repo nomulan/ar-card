@@ -6,25 +6,8 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      #ui-container {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 1000;
-      }
-      .rotate-btn {
-        width: 70px;
-        height: 70px;
-        background: #FF9500;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        font-weight: bold;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
+      #ui-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; }
+      .rotate-btn { width: 70px; height: 70px; background: #FF9500; color: white; border: none; border-radius: 50%; font-weight: bold; }
     </style>
 
     <script>
@@ -33,6 +16,7 @@
 
       function toggleVideo() {
         const video = document.querySelector('#myVideo');
+        video.muted = false; // Unmute on first click
         video.paused ? video.play() : video.pause();
       }
 
@@ -57,29 +41,27 @@
         const sceneEl = document.querySelector('a-scene');
         const avatar = document.querySelector('#avatar');
         const infoPanel = document.querySelector('#info-panel');
-        const arVideo = document.querySelector('#ar-video-entity');
-        const icons = document.querySelectorAll('.icon-animate');
+        const arVideoEntity = document.querySelector('#ar-video-entity');
         const videoAsset = document.querySelector('#myVideo');
+        const icons = document.querySelectorAll('.icon-animate');
 
         sceneEl.addEventListener("targetFound", () => {
+          // Trigger Animations
           avatar.emit('card-found');
           infoPanel.emit('card-found');
-          arVideo.emit('card-found');
+          arVideoEntity.emit('card-found');
           icons.forEach(icon => icon.emit('card-found'));
-          // Video auto-play attempt
-          videoAsset.play().catch(() => console.log("Interaction required"));
+
+          // Force Video Start (Must be muted for mobile)
+          videoAsset.muted = true;
+          videoAsset.play();
         });
 
         sceneEl.addEventListener("targetLost", () => {
           videoAsset.pause();
           avatar.setAttribute("scale", "0 0 0");
-          avatar.setAttribute("position", "0 0 0");
           infoPanel.setAttribute("material", "opacity", "0");
-          arVideo.setAttribute("material", "opacity", "0");
-          icons.forEach(icon => {
-            icon.setAttribute("material", "opacity", "0");
-            icon.setAttribute("position", "0 0 0");
-          });
+          arVideoEntity.setAttribute("material", "opacity", "0");
         });
       });
     </script>
@@ -87,71 +69,56 @@
 
   <body>
     <div id="ui-container">
-      <button class="rotate-btn"
-              onmousedown="startAutoRotate()"
-              onmouseup="stopAutoRotate()"
-              onmouseleave="stopAutoRotate()"
-              ontouchstart="startAutoRotate()"
-              ontouchend="stopAutoRotate()">
+      <button class="rotate-btn" onmousedown="startAutoRotate(); toggleVideo();" ontouchstart="startAutoRotate(); toggleVideo();" onmouseup="stopAutoRotate()" ontouchend="stopAutoRotate()">
         ROTATE
       </button>
     </div>
 
-    <a-scene
-      mindar-image="imageTargetSrc: ./targets.mind;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false">
-
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-assets>
         <a-asset-item id="avatarModel" src="./avatar-HcHzJheZ0UuanqKdzMts.glb"></a-asset-item>
         <img id="instaIcon" src="./instagram.png">
         <img id="linkedinIcon" src="./LinkedIn_logo_initials.png">
         <img id="FacebookIcon" src="./Facebook_logo_(square).png">
         <img id="oyutanMedeelel" src="./oyutanMedeelel.png">
-        <video id="myVideo" src="./MONGOLIAN UNIVERSITY OF SCIENCE AND TECHNOLOGY 2019.mp4" preload="auto" loop="true" crossorigin="anonymous" webkit-playsinline playsinline></video>
+        <video id="myVideo" src="./MONGOLIAN UNIVERSITY OF SCIENCE AND TECHNOLOGY 2019.mp4" preload="auto" loop="true" crossorigin="anonymous" webkit-playsinline playsinline muted></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-
         <a-image id="info-panel" src="#oyutanMedeelel" width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
           animation__slide="property: position; from: 0 0 0; to: 1.2 0 0; dur: 800; delay: 300; easing: easeOutExpo; startEvents: card-found"
           animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
         </a-image>
 
         <a-image src="#instaIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: -0.4 -1 0.1; dur: 600; delay: 900; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 900; startEvents: card-found"
+          animation__slide="property: position; from: 0 0 0; to: -0.4 -1 0.1; dur: 600; delay: 600; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 600; startEvents: card-found"
           onclick="window.open('https://instagram.com/yourprofile', '_blank')">
         </a-image>
 
         <a-image src="#linkedinIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 0 -1 0.1; dur: 600; delay: 1100; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1100; startEvents: card-found"
+          animation__slide="property: position; from: 0 0 0; to: 0 -1 0.1; dur: 600; delay: 800; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 800; startEvents: card-found"
           onclick="window.open('https://linkedin.com/in/yourprofile', '_blank')">
         </a-image>
 
         <a-image src="#FacebookIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 0.4 -1 0.1; dur: 600; delay: 1300; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1300; startEvents: card-found"
+          animation__slide="property: position; from: 0 0 0; to: 0.4 -1 0.1; dur: 600; delay: 1000; easing: easeOutBack; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1000; startEvents: card-found"
           onclick="window.open('https://facebook.com/yourprofile', '_blank')">
         </a-image>
 
-        <a-video id="ar-video-entity" src="#myVideo" width="1" height="1" position="0 0 0" rotation="90 0 0" material="opacity: 0" class="clickable" onclick="toggleVideo()"
-          animation__slide="property: position; from: 0 0 0; to: 0 1 0.1; dur: 800; delay: 1900; easing: easeOutExpo; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1900; startEvents: card-found">
+        <a-video id="ar-video-entity" src="#myVideo" width="1" height="0.6" position="0 0 0" rotation="90 0 0" material="opacity: 0" class="clickable" onclick="toggleVideo()"
+          animation__slide="property: position; from: 0 0 0; to: 0 1 0.1; dur: 800; delay: 1300; easing: easeOutExpo; startEvents: card-found"
+          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1300; startEvents: card-found">
         </a-video>
 
-        <a-gltf-model id="avatar"
-              src="#avatarModel"
-              position="0 0 0"
-              scale="0 0 0"
-              rotation="90 0 0"
-              animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 2500; easing: easeOutBack; startEvents: card-found"
-              animation__slide="property: position; from: 0 0 0; to: 1 1 0.1; dur: 1000; delay: 2500; easing: easeOutExpo; startEvents: card-found">
+        <a-gltf-model id="avatar" src="#avatarModel" position="0 0 0" scale="0 0 0" rotation="90 0 0"
+              animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 1600; easing: easeOutBack; startEvents: card-found"
+              animation__slide="property: position; from: 0 0 0; to: 1 0.8 0.1; dur: 1000; delay: 1600; easing: easeOutExpo; startEvents: card-found">
         </a-gltf-model>
-
       </a-entity>
     </a-scene>
   </body>
