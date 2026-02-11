@@ -6,17 +6,224 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      #ui-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; }
-      .rotate-btn { width: 70px; height: 70px; background: #FF9500; color: white; border: none; border-radius: 50%; font-weight: bold; }
+      #ui-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .rotate-btn {
+        width: 80px;
+        height: 80px;
+        background: #FF9500;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      }
+
+      /* Social Links Overlay - This is clickable with mouse! */
+      #social-links {
+        display: none; /* Hidden until card is detected */
+        flex-direction: row;
+        gap: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px 20px;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      #social-links.show {
+        animation: slideUpFade 0.6s ease-out 0.3s forwards;
+      }
+
+      @keyframes slideUpFade {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .social-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        background-size: cover;
+        background-position: center;
+        transition: transform 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        opacity: 0;
+        transform: scale(0);
+      }
+
+      /* Individual button pop animations - staggered timing */
+      #social-links.show #instagram-btn {
+        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.3s forwards;
+      }
+
+      #social-links.show #facebook-btn {
+        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.5s forwards;
+      }
+
+      #social-links.show #linkedin-btn {
+        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.7s forwards;
+      }
+
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: scale(0) translateY(-100px);
+        }
+        60% {
+          transform: scale(1.15) translateY(0);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .social-btn:hover {
+        transform: scale(1.1);
+      }
+
+      .social-btn:active {
+        transform: scale(0.95);
+      }
+
+      #instagram-btn {
+        background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+      }
+
+      #facebook-btn {
+        background: #1877f2;
+      }
+
+      #linkedin-btn {
+        background: #0077b5;
+      }
+
+      /* Icons inside buttons */
+      .social-btn::after {
+        content: '';
+        display: block;
+        width: 30px;
+        height: 30px;
+        margin: 10px auto;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        filter: brightness(0) invert(1); /* Makes icons white */
+      }
+
+      #instagram-btn::after {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>');
+      }
+
+      #facebook-btn::after {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>');
+      }
+
+      #linkedin-btn::after {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>');
+      }
+
+      .info-text {
+        color: white;
+        font-size: 12px;
+        margin-top: 5px;
+        text-align: center;
+        background: rgba(0,0,0,0.6);
+        padding: 8px 12px;
+        border-radius: 20px;
+        display: none;
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      .info-text.show {
+        animation: fadeInUp 0.5s ease-out 1.9s forwards;
+      }
+
+      @keyframes fadeInUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
 
     <script>
+      // Custom component for clickable links in AR
+      AFRAME.registerComponent('social-link', {
+        schema: {
+          url: {type: 'string', default: ''}
+        },
+        init: function() {
+          this.el.addEventListener('click', () => {
+            if (this.data.url) {
+              console.log('AR Icon clicked:', this.data.url);
+              window.open(this.data.url, '_blank');
+            }
+          });
+        }
+      });
+
+      // Proximity Component
+      AFRAME.registerComponent('proximity-detector', {
+        schema: {
+          distance: {type: 'number', default: 1.2},
+          targetColor: {type: 'color', default: '#00ffff'}
+        },
+        init: function() {
+          this.camera = document.querySelector('a-camera');
+          this.originalColor = this.el.getAttribute('material').color;
+          this.isNear = false;
+        },
+        tick: function() {
+          if (!this.camera) return;
+          const worldPos = new THREE.Vector3();
+          this.el.object3D.getWorldPosition(worldPos);
+          const camPos = new THREE.Vector3();
+          this.camera.object3D.getWorldPosition(camPos);
+          const dist = worldPos.distanceTo(camPos);
+
+          if (dist < this.data.distance && !this.isNear) {
+            this.isNear = true;
+            this.el.setAttribute('animation__color', {
+              property: 'material.color',
+              to: this.data.targetColor,
+              dur: 500
+            });
+          } else if (dist >= this.data.distance && this.isNear) {
+            this.isNear = false;
+            this.el.setAttribute('animation__colorreset', {
+              property: 'material.color',
+              to: this.originalColor,
+              dur: 500
+            });
+          }
+        }
+      });
+
       let rotateInterval;
-      const rotationSpeed = 1.5;
 
       function toggleVideo() {
         const video = document.querySelector('#myVideo');
-        video.muted = false; // Unmute on first click
+        video.muted = false;
         video.paused ? video.play() : video.pause();
       }
 
@@ -25,7 +232,7 @@
         const model = document.querySelector('#avatar');
         const animate = () => {
           let rot = model.getAttribute('rotation');
-          rot.z += rotationSpeed;
+          rot.z += 1.5;
           model.setAttribute('rotation', rot);
           rotateInterval = requestAnimationFrame(animate);
         };
@@ -37,90 +244,168 @@
         rotateInterval = null;
       }
 
+      // Social link functions for HTML buttons
+      function openInstagram() {
+        window.open('https://www.instagram.com/nomuln.n/', '_blank');
+      }
+
+      function openFacebook() {
+        window.open('https://www.facebook.com/Kttnami/', '_blank');
+      }
+
+      function openLinkedIn() {
+        window.open('https://linkedin.com/in/yourprofile', '_blank');
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector('a-scene');
-        const avatar = document.querySelector('#avatar');
-        const infoPanel = document.querySelector('#info-panel');
-        const arVideoEntity = document.querySelector('#ar-video-entity');
         const videoAsset = document.querySelector('#myVideo');
-        const icons = document.querySelectorAll('.icon-animate');
+        const socialLinks = document.getElementById('social-links');
+        const infoText = document.getElementById('info-text');
 
+        // Handle Target Found
         sceneEl.addEventListener("targetFound", () => {
-          // Trigger Animations
-          avatar.emit('card-found');
-          infoPanel.emit('card-found');
-          arVideoEntity.emit('card-found');
-          icons.forEach(icon => icon.emit('card-found'));
+          // Animate all AR elements
+          document.querySelectorAll('[animation__fade], [animation__grow], [animation__appear]')
+                  .forEach(el => el.emit('card-found'));
 
-          // Force Video Start (Must be muted for mobile)
+          // Start video
           videoAsset.muted = true;
           videoAsset.play();
+
+          // Show HTML social buttons AFTER AR icons finish loading
+          // AR icons finish around 1000ms (delay 600-1000ms + 300ms animation)
+          // Wait a bit longer to ensure they're visible first
+          setTimeout(() => {
+            socialLinks.style.display = 'flex';
+            infoText.style.display = 'block';
+            // Trigger pop animation
+            setTimeout(() => {
+              socialLinks.classList.add('show');
+              infoText.classList.add('show');
+            }, 50);
+          }, 1200); // Start after AR icons are visible
         });
 
         sceneEl.addEventListener("targetLost", () => {
           videoAsset.pause();
-          avatar.setAttribute("scale", "0 0 0");
-          infoPanel.setAttribute("material", "opacity", "0");
-          arVideoEntity.setAttribute("material", "opacity", "0");
+
+          // Reset HTML button animations
+          socialLinks.classList.remove('show');
+          infoText.classList.remove('show');
+
+          // Optional: hide buttons completely when card is lost
+          setTimeout(() => {
+            if (!socialLinks.classList.contains('show')) {
+              socialLinks.style.display = 'none';
+              infoText.style.display = 'none';
+            }
+          }, 600);
         });
       });
     </script>
   </head>
 
   <body>
+    <!-- UI Container with both rotate button and social links -->
     <div id="ui-container">
-      <button class="rotate-btn" onmousedown="startAutoRotate(); toggleVideo();" ontouchstart="startAutoRotate(); toggleVideo();" onmouseup="stopAutoRotate()" ontouchend="stopAutoRotate()">
-        ROTATE
+      <!-- Clickable Social Media Buttons (HTML Overlay) -->
+      <div id="social-links">
+        <button id="instagram-btn" class="social-btn" onclick="openInstagram()" title="Instagram"></button>
+        <button id="facebook-btn" class="social-btn" onclick="openFacebook()" title="Facebook"></button>
+        <button id="linkedin-btn" class="social-btn" onclick="openLinkedIn()" title="LinkedIn"></button>
+      </div>
+
+      <p id="info-text" class="info-text">👆 Click icons above to visit social profiles</p>
+
+      <!-- Rotate Button -->
+      <button class="rotate-btn"
+              onmousedown="startAutoRotate(); toggleVideo();"
+              ontouchstart="startAutoRotate(); toggleVideo();"
+              onmouseup="stopAutoRotate()"
+              ontouchend="stopAutoRotate()">
+        HOLD TO<br>ROTATE
       </button>
     </div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;"
+             vr-mode-ui="enabled: false"
+             device-orientation-permission-ui="enabled: false">
+
       <a-assets>
         <a-asset-item id="avatarModel" src="./avatar-HcHzJheZ0UuanqKdzMts.glb"></a-asset-item>
         <img id="instaIcon" src="./instagram.png">
         <img id="linkedinIcon" src="./LinkedIn_logo_initials.png">
         <img id="FacebookIcon" src="./Facebook_logo_(square).png">
         <img id="oyutanMedeelel" src="./oyutanMedeelel.png">
-        <video id="myVideo" src="./MONGOLIAN UNIVERSITY OF SCIENCE AND TECHNOLOGY 2019 (online-video-cutter.com).mp4" preload="auto" loop="true" crossorigin="anonymous" webkit-playsinline playsinline muted></video>
+        <video id="myVideo" src="./MONGOLIAN UNIVERSITY OF SCIENCE AND TECHNOLOGY 2019 (online-video-cutter.com).mp4"
+               preload="auto" loop="true" crossorigin="anonymous"
+               webkit-playsinline playsinline muted></video>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-camera>
+      <a-camera position="0 0 0" look-controls="enabled: false"
+                cursor="rayOrigin: mouse" raycaster="objects: .clickable">
+      </a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-image id="info-panel" src="#oyutanMedeelel" width="1.2" height="1.2" position="0 0 0" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 1.2 0 0; dur: 800; delay: 300; easing: easeOutExpo; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
+
+        <!-- Info Panel -->
+        <a-image id="info-panel" src="#oyutanMedeelel"
+                 width="1.2" height="1.2" position="1.2 0 0"
+                 material="opacity: 0"
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
         </a-image>
 
-        <a-image src="#instaIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: -0.4 -1 0.1; dur: 600; delay: 600; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 600; startEvents: card-found"
-          onclick="window.open('https://instagram.com/yourprofile', '_blank')">
+        <!-- AR Social Icons (decorative, since HTML buttons are easier to click) -->
+        <a-image src="#instaIcon" class="clickable"
+                 position="-0.4 -1 0.1" width="0.25" height="0.25"
+                 material="opacity: 0"
+                 social-link="url: https://www.instagram.com/nomuln.n/"
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 600; startEvents: card-found">
         </a-image>
 
-        <a-image src="#linkedinIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 0 -1 0.1; dur: 600; delay: 800; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 800; startEvents: card-found"
-          onclick="window.open('https://linkedin.com/in/yourprofile', '_blank')">
+        <a-image src="#linkedinIcon" class="clickable"
+                 position="0 -1 0.1" width="0.25" height="0.25"
+                 material="opacity: 0"
+                 social-link="url: https://linkedin.com/in/yourprofile"
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 800; startEvents: card-found">
         </a-image>
 
-        <a-image src="#FacebookIcon" class="clickable icon-animate" position="0 0 0" width="0.25" height="0.25" material="opacity: 0"
-          animation__slide="property: position; from: 0 0 0; to: 0.4 -1 0.1; dur: 600; delay: 1000; easing: easeOutBack; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1000; startEvents: card-found"
-          onclick="window.open('https://facebook.com/yourprofile', '_blank')">
+        <a-image src="#FacebookIcon" class="clickable"
+                 position="0.4 -1 0.1" width="0.25" height="0.25"
+                 material="opacity: 0"
+                 social-link="url: https://www.facebook.com/Kttnami/"
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1000; startEvents: card-found">
         </a-image>
 
-        <a-video id="ar-video-entity" src="#myVideo" width="1.4" height="1" position="0 0 0" rotation="90 0 0" material="opacity: 0" class="clickable" onclick="toggleVideo()"
-          animation__slide="property: position; from: 0 0 0; to: 0 1.4 0.1; dur: 800; delay: 1300; easing: easeOutExpo; startEvents: card-found"
-          animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1300; startEvents: card-found">
+        <!-- Video -->
+        <a-video id="ar-video-entity" src="#myVideo"
+                 width="1.4" height="1" position="0 1.4 0.1"
+                 rotation="0 0 0" material="opacity: 0"
+                 class="clickable" onclick="toggleVideo()"
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1300; startEvents: card-found">
         </a-video>
 
-        <a-gltf-model id="avatar" src="#avatarModel" position="0 0 0" scale="0 0 0" rotation="90 0 0"
-              animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 1600; easing: easeOutBack; startEvents: card-found"
-              animation__slide="property: position; from: 0 0 0; to: 1 0.8 0.1; dur: 1000; delay: 1600; easing: easeOutExpo; startEvents: card-found">
-        </a-gltf-model>
+        <!-- Avatar + Torus -->
+        <a-entity id="avatar-container" position="1 0.8 0.1">
+
+          <a-gltf-model id="avatar" src="#avatarModel"
+                        position="0 0 0" scale="0 0 0" rotation="90 0 0"
+                        animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 1600; easing: easeOutBack; startEvents: card-found">
+          </a-gltf-model>
+
+          <a-torus id="torus1" color="#FF9500"
+                   radius="0.5" radius-tubular="0.02"
+                   rotation="90 0 0" scale="0 0 0"
+                   material="opacity: 0.8; transparent: true"
+                   proximity-detector="distance: 0.8; targetColor: #00ffff"
+                   animation="property: rotation; to: 90 360 0; loop: true; dur: 4000; easing: linear"
+                   animation__appear="property: scale; from: 0 0 0; to: 1.2 1.2 1.2; dur: 1000; delay: 1800; easing: easeOutBack; startEvents: card-found">
+          </a-torus>
+
+        </a-entity>
+
       </a-entity>
     </a-scene>
   </body>
 </html>
-
