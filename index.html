@@ -6,98 +6,220 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      #ui-container {
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      }
+
+      /* Stage Progress Indicator */
+      #stage-indicator {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: none;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 10px 20px;
+        border-radius: 25px;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      #stage-indicator.show {
+        display: block;
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+
+      /* Call-to-Action Button */
+      #cta-button {
         position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-      }
-
-      .rotate-btn {
-        width: 80px;
-        height: 80px;
-        background: #FF9500;
+        display: none;
+        background: linear-gradient(135deg, #FF9500, #FF6B00);
         color: white;
         border: none;
-        border-radius: 50%;
+        padding: 18px 35px;
+        border-radius: 30px;
+        font-size: 16px;
         font-weight: bold;
-        font-size: 11px;
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 6px 20px rgba(255, 149, 0, 0.4);
+        transition: all 0.3s ease;
       }
 
-      /* Social Links Overlay - This is clickable with mouse! */
+      #cta-button.show {
+        display: block;
+        animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+
+      #cta-button:hover {
+        transform: translateX(-50%) scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 149, 0, 0.6);
+      }
+
+      #cta-button:active {
+        transform: translateX(-50%) scale(0.98);
+      }
+
+      @keyframes bounceIn {
+        0% {
+          opacity: 0;
+          transform: translateX(-50%) scale(0.3) translateY(100px);
+        }
+        50% {
+          transform: translateX(-50%) scale(1.05) translateY(-10px);
+        }
+        70% {
+          transform: translateX(-50%) scale(0.9) translateY(5px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateX(-50%) scale(1) translateY(0);
+        }
+      }
+
+      /* Instruction Tooltip */
+      #instruction-tooltip {
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 999;
+        display: none;
+        background: rgba(0, 149, 255, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        max-width: 80%;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      #instruction-tooltip.show {
+        display: block;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.05); }
+      }
+
+      /* Hotspot Info Panel */
+      #hotspot-panel {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 998;
+        display: none;
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        max-width: 90%;
+        width: 350px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      #hotspot-panel.show {
+        display: block;
+        animation: slideUp 0.5s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+
+      #hotspot-panel h3 {
+        margin: 0 0 10px 0;
+        color: #FF9500;
+        font-size: 18px;
+      }
+
+      #hotspot-panel p {
+        margin: 5px 0;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      /* Social Links - Final Stage */
       #social-links {
-        display: none; /* Hidden until card is detected */
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        display: none;
         flex-direction: row;
         gap: 15px;
         background: rgba(0, 0, 0, 0.7);
         padding: 15px 20px;
         border-radius: 50px;
         backdrop-filter: blur(10px);
-        opacity: 0;
-        transform: translateY(20px);
       }
 
       #social-links.show {
-        animation: slideUpFade 0.6s ease-out 0.3s forwards;
+        display: flex;
+        animation: fadeInUp 0.6s ease-out;
       }
 
-      @keyframes slideUpFade {
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(30px);
+        }
         to {
           opacity: 1;
-          transform: translateY(0);
+          transform: translateX(-50%) translateY(0);
         }
       }
 
       .social-btn {
-        width: 50px;
-        height: 50px;
+        width: 55px;
+        height: 55px;
         border-radius: 50%;
         border: none;
         cursor: pointer;
-        background-size: cover;
-        background-position: center;
         transition: transform 0.2s;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        opacity: 0;
-        transform: scale(0);
-      }
-
-      /* Individual button pop animations - staggered timing */
-      #social-links.show #instagram-btn {
-        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.3s forwards;
-      }
-
-      #social-links.show #facebook-btn {
-        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.5s forwards;
-      }
-
-      #social-links.show #linkedin-btn {
-        animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 1.7s forwards;
-      }
-
-      @keyframes popIn {
-        0% {
-          opacity: 0;
-          transform: scale(0) translateY(-100px);
-        }
-        60% {
-          transform: scale(1.15) translateY(0);
-        }
-        100% {
-          opacity: 1;
-          transform: scale(1) translateY(0);
-        }
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       }
 
       .social-btn:hover {
-        transform: scale(1.1);
+        transform: scale(1.15);
       }
 
       .social-btn:active {
@@ -116,17 +238,16 @@
         background: #0077b5;
       }
 
-      /* Icons inside buttons */
       .social-btn::after {
         content: '';
         display: block;
-        width: 30px;
-        height: 30px;
+        width: 35px;
+        height: 35px;
         margin: 10px auto;
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
-        filter: brightness(0) invert(1); /* Makes icons white */
+        filter: brightness(0) invert(1);
       }
 
       #instagram-btn::after {
@@ -141,60 +262,87 @@
         background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>');
       }
 
-      .info-text {
+      /* Rotate Button */
+      .rotate-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        background: rgba(0, 128, 0, 0.9);
         color: white;
-        font-size: 12px;
-        margin-top: 5px;
-        text-align: center;
-        background: rgba(0,0,0,0.6);
-        padding: 8px 12px;
-        border-radius: 20px;
+        border: none;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        z-index: 1000;
         display: none;
-        opacity: 0;
-        transform: translateY(10px);
       }
 
-      .info-text.show {
-        animation: fadeInUp 0.5s ease-out 1.9s forwards;
-      }
-
-      @keyframes fadeInUp {
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      .rotate-btn.show {
+        display: block;
       }
     </style>
 
     <script>
-      // Custom component for clickable links in AR
-      AFRAME.registerComponent('social-link', {
+      // ==========================================
+      // EXPERIENCE MANAGER - Controls 3-Stage Journey
+      // ==========================================
+      let currentStage = 0;
+      const stages = ['intro', 'explore', 'connect'];
+
+      function updateStage(stage) {
+        currentStage = stage;
+        const stageNames = ['Introduction', 'Explore Profile', 'Let\'s Connect'];
+        const indicator = document.getElementById('stage-indicator');
+        indicator.textContent = `Stage ${stage + 1}/3: ${stageNames[stage]}`;
+        console.log(`📍 Stage ${stage + 1}: ${stages[stage]}`);
+      }
+
+      // ==========================================
+      // A-FRAME COMPONENTS
+      // ==========================================
+
+      // Clickable hotspot component
+      AFRAME.registerComponent('hotspot-trigger', {
         schema: {
-          url: {type: 'string', default: ''}
+          title: {type: 'string', default: 'Info'},
+          description: {type: 'string', default: 'Details here'}
         },
         init: function() {
           this.el.addEventListener('click', () => {
-            if (this.data.url) {
-              console.log('AR Icon clicked:', this.data.url);
-              window.open(this.data.url, '_blank');
-            }
+            showHotspotInfo(this.data.title, this.data.description);
+          });
+          
+          // Pulse animation to attract attention
+          this.el.setAttribute('animation__pulse', {
+            property: 'scale',
+            to: '1.3 1.3 1.3',
+            dur: 1000,
+            loop: true,
+            dir: 'alternate',
+            easing: 'easeInOutSine'
           });
         }
       });
 
-      // Proximity Component for Torus
+      // Proximity detector for torus
       AFRAME.registerComponent('proximity-detector', {
         schema: {
-          distance: {type: 'number', default: 1.2},
+          distance: {type: 'number', default: 1.0},
           targetColor: {type: 'color', default: '#00ffff'}
         },
         init: function() {
           this.camera = document.querySelector('a-camera');
           this.originalColor = this.el.getAttribute('material').color;
           this.isNear = false;
+          this.hasTriggered = false;
         },
         tick: function() {
-          if (!this.camera) return;
+          if (!this.camera || currentStage !== 1) return;
+          
           const worldPos = new THREE.Vector3();
           this.el.object3D.getWorldPosition(worldPos);
           const camPos = new THREE.Vector3();
@@ -203,29 +351,134 @@
 
           if (dist < this.data.distance && !this.isNear) {
             this.isNear = true;
-            this.el.setAttribute('animation__color', {
-              property: 'material.color',
-              to: this.data.targetColor,
-              dur: 500
-            });
+            this.el.setAttribute('material', 'color', this.data.targetColor);
+            
+            // First time proximity trigger
+            if (!this.hasTriggered) {
+              this.hasTriggered = true;
+              setTimeout(() => {
+                updateInstruction('Great! Tap the info icons to learn more 👆');
+              }, 500);
+            }
           } else if (dist >= this.data.distance && this.isNear) {
             this.isNear = false;
-            this.el.setAttribute('animation__colorreset', {
-              property: 'material.color',
-              to: this.originalColor,
-              dur: 500
-            });
+            this.el.setAttribute('material', 'color', this.originalColor);
           }
         }
       });
 
-      let rotateInterval;
+      // Social link component
+      AFRAME.registerComponent('social-link', {
+        schema: {
+          url: {type: 'string', default: ''}
+        },
+        init: function() {
+          this.el.addEventListener('click', () => {
+            if (this.data.url) {
+              window.open(this.data.url, '_blank');
+            }
+          });
+        }
+      });
 
-      function toggleVideo() {
-        const video = document.querySelector('#myVideo');
-        video.muted = false;
-        video.paused ? video.play() : video.pause();
+      // ==========================================
+      // UI FUNCTIONS
+      // ==========================================
+
+      function updateInstruction(text) {
+        const tooltip = document.getElementById('instruction-tooltip');
+        tooltip.textContent = text;
+        tooltip.classList.add('show');
       }
+
+      function hideInstruction() {
+        const tooltip = document.getElementById('instruction-tooltip');
+        tooltip.classList.remove('show');
+      }
+
+      function showCTA(text) {
+        const cta = document.getElementById('cta-button');
+        cta.textContent = text;
+        cta.classList.add('show');
+      }
+
+      function hideCTA() {
+        const cta = document.getElementById('cta-button');
+        cta.classList.remove('show');
+      }
+
+      function showHotspotInfo(title, description) {
+        const panel = document.getElementById('hotspot-panel');
+        panel.querySelector('h3').textContent = title;
+        panel.querySelector('p').textContent = description;
+        panel.classList.add('show');
+      }
+
+      function closeHotspot() {
+        document.getElementById('hotspot-panel').classList.remove('show');
+      }
+
+      function showSocialLinks() {
+        document.getElementById('social-links').classList.add('show');
+      }
+
+      function showRotateButton() {
+        document.querySelector('.rotate-btn').classList.add('show');
+      }
+
+      // ==========================================
+      // STAGE PROGRESSION
+      // ==========================================
+
+      function startIntroStage() {
+        updateStage(0);
+        document.getElementById('stage-indicator').classList.add('show');
+        
+        setTimeout(() => {
+          updateInstruction('👋 Welcome! Tap "Start Tour" to begin');
+          showCTA('🚀 Start Tour');
+        }, 1500);
+      }
+
+      function startExploreStage() {
+        updateStage(1);
+        hideCTA();
+        hideInstruction();
+        
+        // Show all AR elements
+        const scene = document.querySelector('a-scene');
+        scene.querySelectorAll('[data-stage="explore"]').forEach(el => {
+          el.emit('stage-explore');
+        });
+        
+        setTimeout(() => {
+          updateInstruction('📱 Move closer to the card to activate details');
+          showRotateButton();
+        }, 1000);
+        
+        // Auto-progress to connect stage after 15 seconds
+        setTimeout(() => {
+          if (currentStage === 1) {
+            startConnectStage();
+          }
+        }, 15000);
+      }
+
+      function startConnectStage() {
+        updateStage(2);
+        hideInstruction();
+        
+        setTimeout(() => {
+          updateInstruction('✨ Choose how you\'d like to connect');
+          showSocialLinks();
+        }, 800);
+      }
+
+      // ==========================================
+      // ROTATION CONTROLS
+      // ==========================================
+
+      let rotateInterval;
 
       function startAutoRotate() {
         if (rotateInterval) return;
@@ -244,7 +497,13 @@
         rotateInterval = null;
       }
 
-      // Social link functions for HTML buttons
+      function toggleVideo() {
+        const video = document.querySelector('#myVideo');
+        video.muted = false;
+        video.paused ? video.play() : video.pause();
+      }
+
+      // Social functions
       function openInstagram() {
         window.open('https://www.instagram.com/nomuln.n/', '_blank');
       }
@@ -257,76 +516,88 @@
         window.open('https://linkedin.com/in/yourprofile', '_blank');
       }
 
+      // ==========================================
+      // INITIALIZATION
+      // ==========================================
+
       document.addEventListener("DOMContentLoaded", () => {
         const sceneEl = document.querySelector('a-scene');
         const videoAsset = document.querySelector('#myVideo');
-        const socialLinks = document.getElementById('social-links');
-        const infoText = document.getElementById('info-text');
+
+        // Setup CTA button handler
+        document.getElementById('cta-button').addEventListener('click', () => {
+          if (currentStage === 0) {
+            startExploreStage();
+          }
+        });
 
         // Handle Target Found
         sceneEl.addEventListener("targetFound", () => {
-          console.log('🎯 AR Target detected!');
-
-          // Animate all AR elements
-          document.querySelectorAll('[animation__fade], [animation__grow], [animation__appear]')
-                  .forEach(el => el.emit('card-found'));
-
-          // Start video
+          console.log('🎯 AR Card Detected!');
           videoAsset.muted = true;
           videoAsset.play();
-
-          // Show social buttons immediately when card is detected (no proximity needed)
-          setTimeout(() => {
-            socialLinks.style.display = 'flex';
-            infoText.style.display = 'block';
-            setTimeout(() => {
-              socialLinks.classList.add('show');
-              infoText.classList.add('show');
-            }, 50);
-          }, 2000); // Appear 2 seconds after card detection
-
-          console.log('📱 Social buttons will appear in 2 seconds...');
+          
+          // Start intro stage
+          startIntroStage();
+          
+          // Trigger intro animations
+          sceneEl.querySelectorAll('[data-stage="intro"]').forEach(el => {
+            el.emit('card-found');
+          });
         });
 
+        // Handle Target Lost
         sceneEl.addEventListener("targetLost", () => {
-          console.log('🎯 AR Target lost');
+          console.log('❌ AR Card Lost');
           videoAsset.pause();
-
-          // Hide social buttons when card is lost
-          socialLinks.classList.remove('show');
-          infoText.classList.remove('show');
-
-          setTimeout(() => {
-            socialLinks.style.display = 'none';
-            infoText.style.display = 'none';
-          }, 600);
+          
+          // Reset UI
+          currentStage = 0;
+          hideCTA();
+          hideInstruction();
+          document.getElementById('stage-indicator').classList.remove('show');
+          document.getElementById('social-links').classList.remove('show');
+          document.querySelector('.rotate-btn').classList.remove('show');
+          closeHotspot();
         });
       });
     </script>
   </head>
 
   <body>
-    <!-- UI Container with both rotate button and social links -->
-    <div id="ui-container">
-      <!-- Clickable Social Media Buttons (HTML Overlay) -->
-      <div id="social-links">
-        <button id="instagram-btn" class="social-btn" onclick="openInstagram()" title="Instagram"></button>
-        <button id="facebook-btn" class="social-btn" onclick="openFacebook()" title="Facebook"></button>
-        <button id="linkedin-btn" class="social-btn" onclick="openLinkedIn()" title="LinkedIn"></button>
-      </div>
+    <!-- Stage Indicator -->
+    <div id="stage-indicator">Stage 1/3: Introduction</div>
 
-      <p id="info-text" class="info-text">👆 Click icons to visit social profiles</p>
+    <!-- Instruction Tooltip -->
+    <div id="instruction-tooltip">Instructions appear here</div>
 
-      <!-- Rotate Button -->
-      <button class="rotate-btn"
-              onmousedown="startAutoRotate(); toggleVideo();"
-              ontouchstart="startAutoRotate(); toggleVideo();"
-              onmouseup="stopAutoRotate()"
-              ontouchend="stopAutoRotate()">
-        HOLD TO<br>ROTATE
-      </button>
+    <!-- Call-to-Action Button -->
+    <button id="cta-button">Start Tour</button>
+
+    <!-- Hotspot Info Panel -->
+    <div id="hotspot-panel">
+      <button class="close-btn" onclick="closeHotspot()">×</button>
+      <h3>Info Title</h3>
+      <p>Details will appear here when you tap a hotspot.</p>
     </div>
 
+    <!-- Social Links (Final Stage) -->
+    <div id="social-links">
+      <button id="instagram-btn" class="social-btn" onclick="openInstagram()" title="Instagram"></button>
+      <button id="facebook-btn" class="social-btn" onclick="openFacebook()" title="Facebook"></button>
+      <button id="linkedin-btn" class="social-btn" onclick="openLinkedIn()" title="LinkedIn"></button>
+    </div>
+
+    <!-- Rotate Button -->
+    <button class="rotate-btn"
+            onmousedown="startAutoRotate()"
+            ontouchstart="startAutoRotate()"
+            onmouseup="stopAutoRotate()"
+            ontouchend="stopAutoRotate()">
+      HOLD TO<br>ROTATE
+    </button>
+
+    <!-- A-Frame Scene -->
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;"
              vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false">
@@ -346,64 +617,110 @@
                 cursor="rayOrigin: mouse" raycaster="objects: .clickable">
       </a-camera>
 
-      <!-- Main AR Target - social buttons appear automatically after 2 seconds -->
       <a-entity mindar-image-target="targetIndex: 0">
 
-        <!-- Info Panel (removed card-proximity from here) -->
-        <a-image id="info-panel" src="#oyutanMedeelel"
-                 width="1.2" height="1.2" position="1.2 0 0"
-                 material="opacity: 0"
-                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
-        </a-image>
+        <!-- ============================================ -->
+        <!-- STAGE 1: INTRO (Appears immediately) -->
+        <!-- ============================================ -->
 
-        <!-- AR Social Icons (decorative, since HTML buttons are easier to click) -->
-        <a-image src="#instaIcon" class="clickable"
-                 position="-0.4 -1 0.1" width="0.25" height="0.25"
-                 material="opacity: 0"
-                 social-link="url: https://www.instagram.com/nomuln.n/"
-                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 600; startEvents: card-found">
-        </a-image>
-
-        <a-image src="#linkedinIcon" class="clickable"
-                 position="0 -1 0.1" width="0.25" height="0.25"
-                 material="opacity: 0"
-                 social-link="url: https://linkedin.com/in/yourprofile"
-                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 800; startEvents: card-found">
-        </a-image>
-
-        <a-image src="#FacebookIcon" class="clickable"
-                 position="0.4 -1 0.1" width="0.25" height="0.25"
-                 material="opacity: 0"
-                 social-link="url: https://www.facebook.com/Kttnami/"
-                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 300; delay: 1000; startEvents: card-found">
-        </a-image>
-
-        <!-- Video -->
-        <a-video id="ar-video-entity" src="#myVideo"
+        <!-- Video (Intro Stage) -->
+        <a-video data-stage="intro" 
+                 src="#myVideo"
                  width="1.4" height="1" position="0 1.4 0.1"
                  rotation="0 0 0" material="opacity: 0"
                  class="clickable" onclick="toggleVideo()"
-                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 1300; startEvents: card-found">
+                 animation__fade="property: material.opacity; from: 0; to: 1; dur: 600; delay: 500; startEvents: card-found">
         </a-video>
 
-        <!-- Avatar + Torus -->
-        <a-entity id="avatar-container" position="1 0.8 0.1">
-
+        <!-- Avatar (Intro Stage) -->
+        <a-entity id="avatar-container" data-stage="intro" position="0 0 0.1">
           <a-gltf-model id="avatar" src="#avatarModel"
                         position="0 0 0" scale="0 0 0" rotation="90 0 0"
-                        animation__grow="property: scale; from: 0 0 0; to: 0.8 0.8 0.8; dur: 1000; delay: 1600; easing: easeOutBack; startEvents: card-found">
+                        animation__grow="property: scale; from: 0 0 0; to: 0.7 0.7 0.7; dur: 1200; delay: 800; easing: easeOutBack; startEvents: card-found">
           </a-gltf-model>
-
-          <a-torus id="torus1" color="#008000"
-                   radius="0.5" radius-tubular="0.02"
-                   rotation="90 0 0" scale="0 0 0"
-                   material="opacity: 0.8; transparent: true"
-                   proximity-detector="distance: 0.8; targetColor: #00ffff"
-                   animation="property: rotation; to: 90 360 0; loop: true; dur: 4000; easing: linear"
-                   animation__appear="property: scale; from: 0 0 0; to: 1.2 1.2 1.2; dur: 1000; delay: 1800; easing: easeOutBack; startEvents: card-found">
-          </a-torus>
-
         </a-entity>
+
+        <!-- ============================================ -->
+        <!-- STAGE 2: EXPLORE (Appears after CTA click) -->
+        <!-- ============================================ -->
+
+        <!-- Info Panel (Explore Stage) -->
+        <a-image data-stage="explore"
+                 src="#oyutanMedeelel"
+                 width="1.2" height="1.2" position="1.2 0 0"
+                 material="opacity: 0"
+                 animation__appear="property: material.opacity; from: 0; to: 1; dur: 600; delay: 200; startEvents: stage-explore">
+        </a-image>
+
+        <!-- Hotspot 1: Education Icon -->
+        <a-sphere data-stage="explore"
+                  class="clickable"
+                  position="1.5 0.4 0.1"
+                  radius="0.08"
+                  color="#FF9500"
+                  material="opacity: 0"
+                  hotspot-trigger="title: Education; description: Mongolian University of Science & Technology - Computer Science Graduate. Strong foundation in AR/VR development."
+                  animation__appear="property: material.opacity; from: 0; to: 0.9; dur: 400; delay: 800; startEvents: stage-explore">
+        </a-sphere>
+
+        <!-- Hotspot 2: Skills Icon -->
+        <a-sphere data-stage="explore"
+                  class="clickable"
+                  position="1.5 -0.1 0.1"
+                  radius="0.08"
+                  color="#00ffff"
+                  material="opacity: 0"
+                  hotspot-trigger="title: Skills; description: AR Development • 3D Modeling • JavaScript • A-Frame • MindAR • Interactive Experiences"
+                  animation__appear="property: material.opacity; from: 0; to: 0.9; dur: 400; delay: 1000; startEvents: stage-explore">
+        </a-sphere>
+
+        <!-- Hotspot 3: Projects Icon -->
+        <a-sphere data-stage="explore"
+                  class="clickable"
+                  position="1.5 -0.6 0.1"
+                  radius="0.08"
+                  color="#00ff00"
+                  material="opacity: 0"
+                  hotspot-trigger="title: Projects; description: AR Business Card • Interactive Lab Tours • Educational VR Experiences • Product Visualization"
+                  animation__appear="property: material.opacity; from: 0; to: 0.9; dur: 400; delay: 1200; startEvents: stage-explore">
+        </a-sphere>
+
+        <!-- Animated Torus with Proximity Detection -->
+        <a-torus data-stage="explore"
+                 color="#008000"
+                 radius="0.4" radius-tubular="0.025"
+                 rotation="90 0 0" scale="0 0 0"
+                 position="0 0 0.1"
+                 material="opacity: 0.7; transparent: true"
+                 proximity-detector="distance: 1.0; targetColor: #00ffff"
+                 animation="property: rotation; to: 90 360 0; loop: true; dur: 4000; easing: linear"
+                 animation__appear="property: scale; from: 0 0 0; to: 1.0 1.0 1.0; dur: 800; delay: 400; easing: easeOutBack; startEvents: stage-explore">
+        </a-torus>
+
+        <!-- ============================================ -->
+        <!-- DECORATIVE AR ICONS (Always visible when tracked) -->
+        <!-- ============================================ -->
+
+        <a-image data-stage="intro" src="#instaIcon" class="clickable"
+                 position="-0.5 -1 0.1" width="0.2" height="0.2"
+                 material="opacity: 0"
+                 social-link="url: https://www.instagram.com/nomuln.n/"
+                 animation__fade="property: material.opacity; from: 0; to: 0.8; dur: 300; delay: 1000; startEvents: card-found">
+        </a-image>
+
+        <a-image data-stage="intro" src="#linkedinIcon" class="clickable"
+                 position="0 -1 0.1" width="0.2" height="0.2"
+                 material="opacity: 0"
+                 social-link="url: https://linkedin.com/in/yourprofile"
+                 animation__fade="property: material.opacity; from: 0; to: 0.8; dur: 300; delay: 1200; startEvents: card-found">
+        </a-image>
+
+        <a-image data-stage="intro" src="#FacebookIcon" class="clickable"
+                 position="0.5 -1 0.1" width="0.2" height="0.2"
+                 material="opacity: 0"
+                 social-link="url: https://www.facebook.com/Kttnami/"
+                 animation__fade="property: material.opacity; from: 0; to: 0.8; dur: 300; delay: 1400; startEvents: card-found">
+        </a-image>
 
       </a-entity>
     </a-scene>
