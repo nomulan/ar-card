@@ -164,6 +164,43 @@
           transform: translateY(0);
         }
       }
+
+      /* Proximity hint - appears when card is detected */
+      #proximity-hint {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 149, 0, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 999;
+        display: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      #proximity-hint.show {
+        display: block;
+      }
+
+      #proximity-hint.hide {
+        display: none;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          transform: translateX(-50%) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translateX(-50%) scale(1.05);
+          opacity: 0.9;
+        }
+      }
     </style>
 
     <script>
@@ -182,7 +219,73 @@
         }
       });
 
-      // Proximity Component
+      // Proximity detector for card (triggers social buttons)
+      AFRAME.registerComponent('card-proximity', {
+        schema: {
+          distance: {type: 'number', default: 0.6}
+        },
+        init: function() {
+          this.camera = document.querySelector('a-camera');
+          this.isNear = false;
+          this.socialLinks = document.getElementById('social-links');
+          this.infoText = document.getElementById('info-text');
+          this.proximityHint = document.getElementById('proximity-hint');
+        },
+        tick: function() {
+          if (!this.camera || !this.socialLinks) return;
+
+          const worldPos = new THREE.Vector3();
+          this.el.object3D.getWorldPosition(worldPos);
+          const camPos = new THREE.Vector3();
+          this.camera.object3D.getWorldPosition(camPos);
+          const dist = worldPos.distanceTo(camPos);
+
+          // When camera gets close to the card
+          if (dist < this.data.distance && !this.isNear) {
+            this.isNear = true;
+            console.log('📱 Camera close! Showing social buttons...');
+
+            // Hide proximity hint
+            if (this.proximityHint) {
+              this.proximityHint.classList.remove('show');
+              this.proximityHint.classList.add('hide');
+            }
+
+            // Show social buttons with pop animation
+            this.socialLinks.style.display = 'flex';
+            this.infoText.style.display = 'block';
+
+            setTimeout(() => {
+              this.socialLinks.classList.add('show');
+              this.infoText.classList.add('show');
+            }, 50);
+          }
+          // When camera moves away
+          else if (dist >= this.data.distance + 0.1 && this.isNear) {
+            this.isNear = false;
+            console.log('📱 Camera far. Hiding social buttons...');
+
+            // Show proximity hint again
+            if (this.proximityHint) {
+              this.proximityHint.classList.add('show');
+              this.proximityHint.classList.remove('hide');
+            }
+
+            // Hide social buttons
+            this.socialLinks.classList.remove('show');
+            this.infoText.classList.remove('show');
+
+            setTimeout(() => {
+              if (!this.socialLinks.classList.contains('show')) {
+                this.socialLinks.style.display = 'none';
+                this.infoText.style.display = 'none';
+              }
+            }, 600);
+          }
+        }
+      });
+
+      // Proximity Component for Torus
       AFRAME.registerComponent('proximity-detector', {
         schema: {
           distance: {type: 'number', default: 1.2},
@@ -262,6 +365,7 @@
         const videoAsset = document.querySelector('#myVideo');
         const socialLinks = document.getElementById('social-links');
         const infoText = document.getElementById('info-text');
+        const proximityHint = document.getElementById('proximity-hint');
 
         // Handle Target Found
         sceneEl.addEventListener("targetFound", () => {
@@ -273,22 +377,26 @@
           videoAsset.muted = true;
           videoAsset.play();
 
-          // Show HTML social buttons AFTER AR icons finish loading
-          // AR icons finish around 1000ms (delay 600-1000ms + 300ms animation)
-          // Wait a bit longer to ensure they're visible first
+          // Show proximity hint after a delay
           setTimeout(() => {
-            socialLinks.style.display = 'flex';
-            infoText.style.display = 'block';
-            // Trigger pop animation
-            setTimeout(() => {
-              socialLinks.classList.add('show');
-              infoText.classList.add('show');
-            }, 50);
-          }, 1200); // Start after AR icons are visible
+            if (proximityHint) {
+              proximityHint.classList.add('show');
+            }
+          }, 1000);
+
+          // Don't show social buttons automatically anymore
+          // They will appear when camera gets close (via card-proximity component)
+          console.log('📱 Card detected! Move closer to reveal social links...');
         });
 
         sceneEl.addEventListener("targetLost", () => {
           videoAsset.pause();
+
+          // Hide proximity hint
+          if (proximityHint) {
+            proximityHint.classList.remove('show');
+            proximityHint.classList.add('hide');
+          }
 
           // Reset HTML button animations
           socialLinks.classList.remove('show');
@@ -307,6 +415,11 @@
   </head>
 
   <body>
+    <!-- Proximity Hint -->
+    <div id="proximity-hint">
+      📱 Move closer to reveal social links!
+    </div>
+
     <!-- UI Container with both rotate button and social links -->
     <div id="ui-container">
       <!-- Clickable Social Media Buttons (HTML Overlay) -->
@@ -316,7 +429,7 @@
         <button id="linkedin-btn" class="social-btn" onclick="openLinkedIn()" title="LinkedIn"></button>
       </div>
 
-      <p id="info-text" class="info-text">👆 Click icons above to visit social profiles</p>
+      <p id="info-text" class="info-text">👆 Click icons to visit social profiles</p>
 
       <!-- Rotate Button -->
       <button class="rotate-btn"
@@ -349,10 +462,11 @@
 
       <a-entity mindar-image-target="targetIndex: 0">
 
-        <!-- Info Panel -->
+        <!-- Info Panel with proximity detection -->
         <a-image id="info-panel" src="#oyutanMedeelel"
                  width="1.2" height="1.2" position="1.2 0 0"
                  material="opacity: 0"
+                 card-proximity="distance: 0.6"
                  animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
         </a-image>
 
