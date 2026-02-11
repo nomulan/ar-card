@@ -220,70 +220,49 @@
       });
 
       // Proximity detector for card (triggers social buttons)
-      AFRAME.registerComponent('card-proximity', {
-        schema: {
-          distance: {type: 'number', default: 0.6}
-        },
-        init: function() {
-          this.camera = document.querySelector('a-camera');
-          this.isNear = false;
-          this.socialLinks = document.getElementById('social-links');
-          this.infoText = document.getElementById('info-text');
-          this.proximityHint = document.getElementById('proximity-hint');
-        },
-        tick: function() {
-          if (!this.camera || !this.socialLinks) return;
+     AFRAME.registerComponent('card-proximity', {
+  schema: {
+    distance: {type: 'number', default: 0.2} // 20 см болгож тохируулав
+  },
+  init: function() {
+    this.camera = document.querySelector('a-camera');
+    this.socialLinks = document.getElementById('social-links');
+    this.infoText = document.getElementById('info-text');
+    this.isNear = false;
+  },
+  tick: function() {
+    if (!this.camera || !this.socialLinks) return;
 
-          const worldPos = new THREE.Vector3();
-          this.el.object3D.getWorldPosition(worldPos);
-          const camPos = new THREE.Vector3();
-          this.camera.object3D.getWorldPosition(camPos);
-          const dist = worldPos.distanceTo(camPos);
+    const worldPos = new THREE.Vector3();
+    this.el.object3D.getWorldPosition(worldPos);
+    const camPos = new THREE.Vector3();
+    this.camera.object3D.getWorldPosition(camPos);
+    const dist = worldPos.distanceTo(camPos);
 
-          // When camera gets close to the card
-          if (dist < this.data.distance && !this.isNear) {
-            this.isNear = true;
-            console.log('📱 Camera close! Showing social buttons...');
-
-            // Hide proximity hint
-            if (this.proximityHint) {
-              this.proximityHint.classList.remove('show');
-              this.proximityHint.classList.add('hide');
-            }
-
-            // Show social buttons with pop animation
-            this.socialLinks.style.display = 'flex';
-            this.infoText.style.display = 'block';
-
-            setTimeout(() => {
-              this.socialLinks.classList.add('show');
-              this.infoText.classList.add('show');
-            }, 50);
-          }
-          // When camera moves away
-          else if (dist >= this.data.distance + 0.1 && this.isNear) {
-            this.isNear = false;
-            console.log('📱 Camera far. Hiding social buttons...');
-
-            // Show proximity hint again
-            if (this.proximityHint) {
-              this.proximityHint.classList.add('show');
-              this.proximityHint.classList.remove('hide');
-            }
-
-            // Hide social buttons
-            this.socialLinks.classList.remove('show');
-            this.infoText.classList.remove('show');
-
-            setTimeout(() => {
-              if (!this.socialLinks.classList.contains('show')) {
-                this.socialLinks.style.display = 'none';
-                this.infoText.style.display = 'none';
-              }
-            }, 600);
-          }
+    // 20 см-ээс дотогш ойртох үед (Илэрнэ)
+    if (dist < this.data.distance && !this.isNear) {
+      this.isNear = true;
+      this.socialLinks.style.display = 'flex';
+      this.infoText.style.display = 'block';
+      setTimeout(() => {
+        this.socialLinks.classList.add('show');
+        this.infoText.classList.add('show');
+      }, 50);
+    }
+    // 20 см-ээс холдох үед (Алга болно)
+    else if (dist >= this.data.distance && this.isNear) {
+      this.isNear = false;
+      this.socialLinks.classList.remove('show');
+      this.infoText.classList.remove('show');
+      setTimeout(() => {
+        if (!this.isNear) { // Хэрэв буцаад ойртоогүй бол бүр мөсөн нуух
+          this.socialLinks.style.display = 'none';
+          this.infoText.style.display = 'none';
         }
-      });
+      }, 600);
+    }
+  }
+});
 
       // Proximity Component for Torus
       AFRAME.registerComponent('proximity-detector', {
