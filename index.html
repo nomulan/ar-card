@@ -219,50 +219,68 @@
         }
       });
 
-      // Proximity detector for card (triggers social buttons)
-     AFRAME.registerComponent('card-proximity', {
-  schema: {
-    distance: {type: 'number', default: 0.2} // 20 см болгож тохируулав
-  },
-  init: function() {
-    this.camera = document.querySelector('a-camera');
-    this.socialLinks = document.getElementById('social-links');
-    this.infoText = document.getElementById('info-text');
-    this.isNear = false;
-  },
-  tick: function() {
-    if (!this.camera || !this.socialLinks) return;
+      // FIXED: Proximity detector for card (triggers social buttons)
+      // Now attached to the main target entity and with increased distance
+      AFRAME.registerComponent('card-proximity', {
+        schema: {
+          distance: {type: 'number', default: 1.5} // Increased from 0.2m to 1.5m for easier detection
+        },
+        init: function() {
+          this.camera = document.querySelector('a-camera');
+          this.socialLinks = document.getElementById('social-links');
+          this.infoText = document.getElementById('info-text');
+          this.proximityHint = document.getElementById('proximity-hint');
+          this.isNear = false;
+          console.log('Card proximity detector initialized with distance:', this.data.distance);
+        },
+        tick: function() {
+          if (!this.camera || !this.socialLinks) return;
 
-    const worldPos = new THREE.Vector3();
-    this.el.object3D.getWorldPosition(worldPos);
-    const camPos = new THREE.Vector3();
-    this.camera.object3D.getWorldPosition(camPos);
-    const dist = worldPos.distanceTo(camPos);
+          const worldPos = new THREE.Vector3();
+          this.el.object3D.getWorldPosition(worldPos);
+          const camPos = new THREE.Vector3();
+          this.camera.object3D.getWorldPosition(camPos);
+          const dist = worldPos.distanceTo(camPos);
 
-    // 20 см-ээс дотогш ойртох үед (Илэрнэ)
-    if (dist < this.data.distance && !this.isNear) {
-      this.isNear = true;
-      this.socialLinks.style.display = 'flex';
-      this.infoText.style.display = 'block';
-      setTimeout(() => {
-        this.socialLinks.classList.add('show');
-        this.infoText.classList.add('show');
-      }, 50);
-    }
-    // 20 см-ээс холдох үед (Алга болно)
-    else if (dist >= this.data.distance && this.isNear) {
-      this.isNear = false;
-      this.socialLinks.classList.remove('show');
-      this.infoText.classList.remove('show');
-      setTimeout(() => {
-        if (!this.isNear) { // Хэрэв буцаад ойртоогүй бол бүр мөсөн нуух
-          this.socialLinks.style.display = 'none';
-          this.infoText.style.display = 'none';
+          // Show buttons when within 1.5 meters
+          if (dist < this.data.distance && !this.isNear) {
+            this.isNear = true;
+            console.log('📱 Camera close enough! Showing social buttons. Distance:', dist.toFixed(2), 'm');
+
+            // Hide proximity hint
+            if (this.proximityHint) {
+              this.proximityHint.classList.remove('show');
+            }
+
+            // Show social buttons
+            this.socialLinks.style.display = 'flex';
+            this.infoText.style.display = 'block';
+            setTimeout(() => {
+              this.socialLinks.classList.add('show');
+              this.infoText.classList.add('show');
+            }, 50);
+          }
+          // Hide buttons when farther than 1.5 meters
+          else if (dist >= this.data.distance && this.isNear) {
+            this.isNear = false;
+            console.log('📱 Camera too far. Hiding social buttons. Distance:', dist.toFixed(2), 'm');
+
+            // Show proximity hint again
+            if (this.proximityHint) {
+              this.proximityHint.classList.add('show');
+            }
+
+            this.socialLinks.classList.remove('show');
+            this.infoText.classList.remove('show');
+            setTimeout(() => {
+              if (!this.isNear) {
+                this.socialLinks.style.display = 'none';
+                this.infoText.style.display = 'none';
+              }
+            }, 600);
+          }
         }
-      }, 600);
-    }
-  }
-});
+      });
 
       // Proximity Component for Torus
       AFRAME.registerComponent('proximity-detector', {
@@ -348,6 +366,8 @@
 
         // Handle Target Found
         sceneEl.addEventListener("targetFound", () => {
+          console.log('🎯 AR Target detected!');
+
           // Animate all AR elements
           document.querySelectorAll('[animation__fade], [animation__grow], [animation__appear]')
                   .forEach(el => el.emit('card-found'));
@@ -363,12 +383,11 @@
             }
           }, 1000);
 
-          // Don't show social buttons automatically anymore
-          // They will appear when camera gets close (via card-proximity component)
-          console.log('📱 Card detected! Move closer to reveal social links...');
+          console.log('📱 Proximity detection active. Move camera to trigger social buttons...');
         });
 
         sceneEl.addEventListener("targetLost", () => {
+          console.log('🎯 AR Target lost');
           videoAsset.pause();
 
           // Hide proximity hint
@@ -381,7 +400,7 @@
           socialLinks.classList.remove('show');
           infoText.classList.remove('show');
 
-          // Optional: hide buttons completely when card is lost
+          // Hide buttons completely when card is lost
           setTimeout(() => {
             if (!socialLinks.classList.contains('show')) {
               socialLinks.style.display = 'none';
@@ -439,13 +458,13 @@
                 cursor="rayOrigin: mouse" raycaster="objects: .clickable">
       </a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0">
+      <!-- FIXED: card-proximity component now attached to main target entity -->
+      <a-entity mindar-image-target="targetIndex: 0" card-proximity="distance: 1.5">
 
-        <!-- Info Panel with proximity detection -->
+        <!-- Info Panel (removed card-proximity from here) -->
         <a-image id="info-panel" src="#oyutanMedeelel"
                  width="1.2" height="1.2" position="1.2 0 0"
                  material="opacity: 0"
-                 card-proximity="distance: 0.6"
                  animation__fade="property: material.opacity; from: 0; to: 1; dur: 400; delay: 300; startEvents: card-found">
         </a-image>
 
