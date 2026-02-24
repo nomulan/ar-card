@@ -509,53 +509,6 @@
         background: rgba(168,85,247,0.15);
       }
 
-      /* ─── PROXIMITY INDICATOR ──────────────────────────────────── */
-      #proximity-bar {
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        pointer-events: none;
-      }
-
-      #proximity-bar.visible { display: flex; }
-
-      .prox-label {
-        font-family: 'Space Mono', monospace;
-        font-size: 9px;
-        letter-spacing: 2px;
-        color: rgba(255,255,255,0.45);
-      }
-
-      .prox-track {
-        width: 160px;
-        height: 4px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-
-      .prox-fill {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
-        border-radius: 4px;
-        transition: width 0.2s ease;
-      }
-
-      .prox-hint {
-        font-family: 'Space Mono', monospace;
-        font-size: 9px;
-        color: rgba(255,255,255,0.35);
-        letter-spacing: 1px;
-        animation: blink 1.5s ease-in-out infinite;
-      }
-
-      .prox-hint.unlocked {
-        color: #4ade80;
-        animation: none;
-      }
-
       .ctrl-icon { font-size: 20px; line-height: 1; }
 
       .rotate-btn-main {
@@ -713,77 +666,6 @@
         }
       });
 
-      /* ── SOCIAL PROXIMITY WATCHER ──────────────────────────────── */
-      // Tracks distance from camera to the AR target anchor and reveals
-      // the HTML social buttons when the user gets close enough.
-      AFRAME.registerComponent('social-proximity-watcher', {
-        schema: {
-          revealDistance:  { type: 'number', default: 0.55 }, // world-units — closer = phone nearer card
-          hideDistance:    { type: 'number', default: 0.72 }  // slight hysteresis to avoid flicker
-        },
-        init: function() {
-          this.camera = document.querySelector('a-camera');
-          this.socialLinks = document.getElementById('social-links');
-          this.infoText    = document.getElementById('info-text');
-          this.proxBar     = document.getElementById('proximity-bar');
-          this.proxFill    = document.getElementById('prox-fill');
-          this.proxHint    = document.getElementById('prox-hint');
-          this.unlocked    = false;
-          this.cardVisible = false;   // set externally when targetFound/Lost fires
-
-          // Tour step 04 text update hook
-          this._tourUpdated = false;
-        },
-        tick: function() {
-          if (!this.camera || !this.cardVisible) return;
-
-          const worldPos = new THREE.Vector3();
-          this.el.object3D.getWorldPosition(worldPos);
-          const camPos = new THREE.Vector3();
-          this.camera.object3D.getWorldPosition(camPos);
-          const dist = worldPos.distanceTo(camPos);
-
-          // Map distance to a 0–100% progress bar (farther = 0%, at reveal threshold = 100%)
-          const FAR = 1.2;
-          const NEAR = this.data.revealDistance;
-          const pct = Math.max(0, Math.min(100, (1 - (dist - NEAR) / (FAR - NEAR)) * 100));
-          this.proxFill.style.width = pct + '%';
-
-          if (!this.unlocked && dist < this.data.revealDistance) {
-            this.unlocked = true;
-            this.proxHint.textContent = '✦ UNLOCKED';
-            this.proxHint.classList.add('unlocked');
-            this._showSocial();
-            showToast('🔓 Social links unlocked — move closer!');
-            spawnParticles(window.innerWidth/2, window.innerHeight - 150, 18);
-
-            // Advance tour if active
-            if (tourActive && tourStep === 3) { tourStep = 4; showTourStep(4); }
-          } else if (this.unlocked && dist > this.data.hideDistance) {
-            this.unlocked = false;
-            this.proxHint.textContent = '▲ MOVE CLOSER';
-            this.proxHint.classList.remove('unlocked');
-            this._hideSocial();
-          }
-        },
-        _showSocial: function() {
-          this.socialLinks.style.display = 'flex';
-          this.infoText.style.display = 'block';
-          setTimeout(() => {
-            this.socialLinks.classList.add('show');
-            this.infoText.classList.add('show');
-          }, 50);
-        },
-        _hideSocial: function() {
-          this.socialLinks.classList.remove('show');
-          this.infoText.classList.remove('show');
-          setTimeout(() => {
-            this.socialLinks.style.display = 'none';
-            this.infoText.style.display = 'none';
-          }, 600);
-        }
-      });
-
       /* ── TOUR ENGINE ───────────────────────────────────────────── */
       const TOUR_STEPS = [
         {
@@ -803,7 +685,7 @@
         },
         {
           title: "STEP 04 / 05",
-          text: "<strong>Move your camera closer</strong> to the card — the social links will unlock automatically!",
+          text: "The <strong>social links</strong> will pop up automatically once all elements have appeared!",
           next: "Next"
         },
         {
@@ -821,43 +703,31 @@
         tourActive = true;
         tourStep = 0;
         showTourStep(0);
-        // Show scan overlay
         document.getElementById('scan-overlay').classList.add('active');
       }
 
       function showTourStep(idx) {
         const step = TOUR_STEPS[idx];
         const guide = document.getElementById('tour-guide');
-        const numEl = guide.querySelector('.guide-step-num');
-        const textEl = guide.querySelector('.guide-text');
-        const nextBtn = guide.querySelector('.guide-btn.primary');
-        const dots = guide.querySelectorAll('.guide-dot');
-
-        numEl.textContent = step.title;
-        textEl.innerHTML = step.text;
-        nextBtn.textContent = step.next;
-
-        dots.forEach((d, i) => {
+        guide.querySelector('.guide-step-num').textContent = step.title;
+        guide.querySelector('.guide-text').innerHTML = step.text;
+        guide.querySelector('.guide-btn.primary').textContent = step.next;
+        guide.querySelectorAll('.guide-dot').forEach((d, i) => {
           d.classList.toggle('active', i === idx);
           d.classList.toggle('done', i < idx);
         });
-
         guide.classList.remove('visible');
         setTimeout(() => guide.classList.add('visible'), 50);
       }
 
       function nextTourStep() {
         tourStep++;
-        if (tourStep >= TOUR_STEPS.length) {
-          endTour();
-        } else {
-          showTourStep(tourStep);
-        }
+        if (tourStep >= TOUR_STEPS.length) endTour();
+        else showTourStep(tourStep);
       }
 
       function endTour() {
-        const guide = document.getElementById('tour-guide');
-        guide.classList.remove('visible');
+        document.getElementById('tour-guide').classList.remove('visible');
         tourActive = false;
         showToast("🎉 You're all set! Scan the card to begin.");
       }
@@ -866,6 +736,58 @@
         endTour();
         showToast("Skipped tour — scan the card to start!");
       }
+
+      /* ── INIT ──────────────────────────────────────────────────── */
+      document.addEventListener("DOMContentLoaded", () => {
+        const sceneEl = document.querySelector('a-scene');
+        const videoAsset = document.querySelector('#myVideo');
+        const socialLinks = document.getElementById('social-links');
+        const infoText = document.getElementById('info-text');
+        const controlsBar = document.getElementById('controls-bar');
+
+        initLongPress(document.querySelector('.rotate-btn-main'));
+
+        sceneEl.addEventListener("targetFound", () => {
+          if (tourActive && tourStep <= 1) { tourStep = 1; showTourStep(1); }
+
+          document.getElementById('scan-overlay').classList.remove('active');
+
+          document.querySelectorAll('[animation__fade], [animation__grow], [animation__appear]')
+                  .forEach(el => el.emit('card-found'));
+
+          videoAsset.muted = true;
+          videoAsset.play();
+
+          celebrateFound();
+          spawnParticles(window.innerWidth/2, window.innerHeight/2, 24);
+          showToast('🎯 Card detected! AR unlocked');
+
+          // Show controls + socials after all AR elements have appeared
+          // Last element: torus at delay 1800 + 1000ms dur ≈ 2800ms
+          setTimeout(() => {
+            controlsBar.classList.add('active');
+            socialLinks.style.display = 'flex';
+            infoText.style.display = 'block';
+            setTimeout(() => {
+              socialLinks.classList.add('show');
+              infoText.classList.add('show');
+            }, 50);
+            if (tourActive && tourStep === 1) { tourStep = 2; showTourStep(2); }
+          }, 3000);
+        });
+
+        sceneEl.addEventListener("targetLost", () => {
+          videoAsset.pause();
+          socialLinks.classList.remove('show');
+          infoText.classList.remove('show');
+          setTimeout(() => {
+            socialLinks.style.display = 'none';
+            infoText.style.display = 'none';
+          }, 600);
+          document.getElementById('scan-overlay').classList.add('active');
+          showToast('📷 Card lost — re-aim at the card');
+        });
+      });
 
       /* ── TOAST SYSTEM ──────────────────────────────────────────── */
       function showToast(msg) {
@@ -930,16 +852,16 @@
         document.querySelector('.rotate-btn-main').classList.remove('spinning');
       }
 
-      /* ── COLOR CYCLE ───────────────────────────────────────────── */
-      const torusColors = ['#008000','#a855f7','#f97316','#ec4899','#38bdf8','#4ade80'];
+      /* ── COLOR CYCLE (red / green only) ───────────────────────── */
+      const torusColors = ['#008000', '#ff2020'];
       let colorIdx = 0;
       function cycleColor() {
         colorIdx = (colorIdx + 1) % torusColors.length;
         const torus = document.querySelector('#torus1');
         torus.setAttribute('animation__cyclecolor', { property: 'material.color', to: torusColors[colorIdx], dur: 400 });
         spawnRipple(window.innerWidth/2, window.innerHeight/2 + 80);
-        showToast(`🎨 Torus: ${torusColors[colorIdx]}`);
-        document.getElementById('color-btn').style.setProperty('--accent', torusColors[colorIdx]);
+        const label = colorIdx === 0 ? 'Green' : 'Red';
+        showToast('🎨 Torus: ' + label);
       }
 
       /* ── CONFETTI BURST ────────────────────────────────────────── */
@@ -1196,15 +1118,6 @@
     <!-- ── UI CONTAINER ─────────────────────────────────────────── -->
     <div id="ui-container">
 
-      <!-- Proximity Bar -->
-      <div id="proximity-bar">
-        <div class="prox-label">DISTANCE TO CARD</div>
-        <div class="prox-track">
-          <div class="prox-fill" id="prox-fill"></div>
-        </div>
-        <div class="prox-hint" id="prox-hint">▲ MOVE CLOSER</div>
-      </div>
-
       <!-- Social Links -->
       <div id="social-links">
         <button id="instagram-btn" class="social-btn" onclick="openInstagram()" title="Instagram"></button>
@@ -1254,8 +1167,7 @@
                 cursor="rayOrigin: mouse" raycaster="objects: .clickable">
       </a-camera>
 
-      <a-entity mindar-image-target="targetIndex: 0"
-                social-proximity-watcher="revealDistance: 0.55; hideDistance: 0.72">
+      <a-entity mindar-image-target="targetIndex: 0">
 
         <!-- Info Panel -->
         <a-image id="info-panel" src="#oyutanMedeelel"
